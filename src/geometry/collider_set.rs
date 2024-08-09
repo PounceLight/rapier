@@ -9,8 +9,8 @@ use std::ops::{Index, IndexMut};
 /// A set of colliders that can be handled by a physics `World`.
 pub struct ColliderSet {
     pub(crate) colliders: Arena<Collider>,
-    pub(crate) modified_colliders: Vec<ColliderHandle>,
-    pub(crate) removed_colliders: Vec<ColliderHandle>,
+    // pub(crate) modified_colliders: Vec<ColliderHandle>,
+    // pub(crate) removed_colliders: Vec<ColliderHandle>,
 }
 
 impl ColliderSet {
@@ -18,17 +18,19 @@ impl ColliderSet {
     pub fn new() -> Self {
         ColliderSet {
             colliders: Arena::new(),
-            modified_colliders: Vec::new(),
-            removed_colliders: Vec::new(),
+            // modified_colliders: Vec::new(),
+            // removed_colliders: Vec::new(),
         }
     }
 
     pub(crate) fn take_modified(&mut self) -> Vec<ColliderHandle> {
-        std::mem::take(&mut self.modified_colliders)
+        // std::mem::take(&mut self.modified_colliders)
+        unimplemented!()
     }
 
     pub(crate) fn take_removed(&mut self) -> Vec<ColliderHandle> {
-        std::mem::take(&mut self.removed_colliders)
+        //std::mem::take(&mut self.removed_colliders)
+        unimplemented!()
     }
 
     /// An always-invalid collider handle.
@@ -52,10 +54,10 @@ impl ColliderSet {
     /// Iterates mutably through all the colliders on this set.
     #[cfg(not(feature = "dev-remove-slow-accessors"))]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (ColliderHandle, &mut Collider)> {
-        self.modified_colliders.clear();
-        let modified_colliders = &mut self.modified_colliders;
+        /* self.modified_colliders.clear();
+        let modified_colliders = &mut self.modified_colliders; */
         self.colliders.iter_mut().map(move |(h, b)| {
-            modified_colliders.push(ColliderHandle(h));
+            //modified_colliders.push(ColliderHandle(h));
             (ColliderHandle(h), b)
         })
     }
@@ -82,6 +84,7 @@ impl ColliderSet {
     }
 
     /// Inserts a new collider to this set and retrieve its handle.
+    #[allow(clippy::let_and_return)]
     pub fn insert(&mut self, coll: impl Into<Collider>) -> ColliderHandle {
         let mut coll = coll.into();
         // Make sure the internal links are reset, they may not be
@@ -89,7 +92,7 @@ impl ColliderSet {
         coll.reset_internal_references();
         coll.parent = None;
         let handle = ColliderHandle(self.colliders.insert(coll));
-        self.modified_colliders.push(handle);
+        // self.modified_colliders.push(handle);
         handle
     }
 
@@ -120,7 +123,7 @@ impl ColliderSet {
             .get_mut_internal_with_modification_tracking(parent_handle)
             .expect("Parent rigid body not found.");
         let handle = ColliderHandle(self.colliders.insert(coll));
-        self.modified_colliders.push(handle);
+        // self.modified_colliders.push(handle);
 
         let coll = self.colliders.get_mut(handle.0).unwrap();
         parent.add_collider_internal(
@@ -214,7 +217,7 @@ impl ColliderSet {
         /*
          * Publish removal.
          */
-        self.removed_colliders.push(handle);
+        // self.removed_colliders.push(handle);
 
         Some(collider)
     }
@@ -247,7 +250,7 @@ impl ColliderSet {
     pub fn get_unknown_gen_mut(&mut self, i: u32) -> Option<(&mut Collider, ColliderHandle)> {
         let (collider, handle) = self.colliders.get_unknown_gen_mut(i)?;
         let handle = ColliderHandle(handle);
-        Self::mark_as_modified(handle, collider, &mut self.modified_colliders);
+        // Self::mark_as_modified(handle, collider, &mut self.modified_colliders);
         Some((collider, handle))
     }
 
@@ -256,6 +259,7 @@ impl ColliderSet {
         self.colliders.get(handle.0)
     }
 
+    #[allow(dead_code)]
     fn mark_as_modified(
         handle: ColliderHandle,
         collider: &mut Collider,
@@ -271,7 +275,7 @@ impl ColliderSet {
     #[cfg(not(feature = "dev-remove-slow-accessors"))]
     pub fn get_mut(&mut self, handle: ColliderHandle) -> Option<&mut Collider> {
         let result = self.colliders.get_mut(handle.0)?;
-        Self::mark_as_modified(handle, result, &mut self.modified_colliders);
+        // Self::mark_as_modified(handle, result, &mut self.modified_colliders);
         Some(result)
     }
 
@@ -291,7 +295,7 @@ impl ColliderSet {
         handle: ColliderHandle,
     ) -> Option<&mut Collider> {
         let result = self.colliders.get_mut(handle.0)?;
-        Self::mark_as_modified(handle, result, &mut self.modified_colliders);
+        // Self::mark_as_modified(handle, result, &mut self.modified_colliders);
         Some(result)
     }
 }
@@ -313,10 +317,11 @@ impl Index<ColliderHandle> for ColliderSet {
 }
 
 #[cfg(not(feature = "dev-remove-slow-accessors"))]
+#[allow(clippy::let_and_return)]
 impl IndexMut<ColliderHandle> for ColliderSet {
     fn index_mut(&mut self, handle: ColliderHandle) -> &mut Collider {
         let collider = &mut self.colliders[handle.0];
-        Self::mark_as_modified(handle, collider, &mut self.modified_colliders);
+        // Self::mark_as_modified(handle, collider, &mut self.modified_colliders);
         collider
     }
 }
